@@ -1,0 +1,341 @@
+---
+title: "Tipología y ciclo de Vida de los datos. PRA2"
+authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
+date: "31/12/2020"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Importación previa de librerías
+```{r message= FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+library(VIM)
+```
+
+# 1. Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?
+
+El dataset corresponde a una completa colección de datos de los pasajeros que embarcaron en el Titanic. Es parte de una competición activa de Kaggle y el objeto de esta competición es la realización de análisis predictivo sobre qué pasajeros sobrevivieron al naufragio del Titanic. 
+
+# 2. Integración y selección de los datos de interés a analizar.
+
+## Carga de datos y análisis inicial
+
+Para empezar cargamos los datos. No hará falta integrarlos porque tenemos un único origen de datos, por lo qu enos centraremos en el análisis y limpieza de estos. 
+
+```{r carga, message= FALSE, warning=FALSE}
+data.train<-read.csv("./titanic/train.csv",header=T,sep=",")
+```
+
+Hacemos una primera revisión de los datos, mirando la dimensión del data frame importado y las clases de cada variable del mismo
+```{r analisis, message= FALSE, warning=FALSE}
+# Breve análisis de los datos 
+# Dimensiones de la base de datos mediante la función dim(). Obtenemos que disponemos de 891 registros o pasajeros (filas) y 12 variables (columnas). 
+dim(data.train)
+
+# Examinamos el tipo de datos con los que R ha interpretado cada variable.
+sapply(data.train,class)
+```
+Vemos que nuestro dataset no es muy extenso, con tan sólo 891 individuos y 12 variables diferentes para trabajar. Como referencia, ponemos un breve diccionario que explica cada variable
+
+## Data Dictionary
+
+PassengerId -> id of de passenger
+
+survived -> 0 = No; 1 = Yes
+
+pclass -> Passenger Class	1 = 1st; 2 = 2nd; 3 = 3rd
+
+name -> First and Last Name	 
+
+sex -> Sex	 
+
+age	-> Age	 
+
+sibsp	-> Number of Siblings/Spouses Aboard	 
+
+parch	 -> Number of Parents/Children Aboard	 
+
+ticket	-> Ticket Number	 
+
+fare -> Passenger Fare	 
+
+cabin -> Cabin	 
+
+embarked -> Port of Embarkation	C = Cherbourg; Q = Queenstown; S = Southampton
+ 
+## Formato de variables
+
+Examinamos distribución de valores por variables para ver si hay alguna que esté en un formato inadecuado
+
+```{r formato, message= FALSE, warning=FALSE}
+summary(data.train)
+```
+Observamos que tenemos 177 NA's en la variable Age, pero estos valores perdidos los trataremos en otro apartado. 
+Reformateamos las siguientes variables para trabajar mejor con ellas
+
+|Variable|Formato origen|Formato destino|
+|--------|:------------:|--------------:|
+|Survived|entero        |factor         |
+|Pclass  |entero        |factor         |
+|Sex     |string        |factor         |
+|Ticket  |string        |factor         |
+|Cabin   |string        |factor         |
+|Embarked|string        |factor         |
+
+```{r formato_cambio, message= FALSE, warning=FALSE}
+
+#Survived de entero a factor
+data.train$Survived <- factor(data.train$Survived, levels=c(0,1), labels=c("No", "Sí"))
+levels(data.train$Survived)
+
+#Pclass de entero a factor
+data.train$Pclass <- factor(data.train$Pclass, levels=c(1,2,3), labels=c("Primera clase", "Segunda clase", "Tercera clase"))
+levels(data.train$Pclass )
+
+#R ha interpretado la variable Sex como un string, la cambiamos a factor
+data.train$Sex<- factor(data.train$Sex)
+levels(data.train$Sex)
+
+#R ha interpretado la variable Ticket como un string, la cambiamos a factor
+data.train$Ticket<- factor(data.train$Ticket)
+head(levels(data.train$Ticket))
+
+# R ha interpretado la variable Cabin como un string, la cambiamos a factor
+data.train$Cabin<- factor(data.train$Cabin)
+head(levels(data.train$Cabin))
+
+# R ha interpretado la variable Embarked como un string, la cambiamos a factor
+data.train$Embarked<- factor(data.train$Embarked, levels=c("C", "Q", "S"),labels=c("Cherbourg", "Queenstown", "Southampton"))
+levels(data.train$Embarked)
+```
+
+Revisamos cómo ha quedado todo después de los cambios de formato
+```{r revision_formato}
+head(data.train)
+sapply(data.train,class)
+```
+
+# 3. Limpieza de los datos
+
+## 3.1. ¿Los datos contienen ceros o elementos vacíos? ¿Cómo gestionarías cada uno de estos casos?
+
+Miramos el número de valores desconocidos y valores vacios por campo
+```{r ceros}
+sapply(data.train, function(x) sum(is.na(x)))
+sapply(data.train, function(x) sum(ifelse(x=="", 1,0)))
+```
+En resumen vemos que tenemos 177 NAs en Age, 687 campos vacíos en Cabin y 2 en Embarked.
+
+Cambiamos los campos vacíos por NAs, pues no tenemos ningún motivo para diferenciar estos de los NAs y tratarlos diferente.
+
+```{r NA}
+data.train$Cabin[data.train$Cabin==""]<- NA
+data.train$Cabin[data.train$Embarked==""]<- NA
+```
+
+Imputaremos los valores que faltan basándonos en la similitud o diferencia entre los registros: la imputación basada en k vecinos más próximos
+
+Imputamos los valores para Age y Embraked, en la variable Cabin hay demasiada poca información como para haer imputaciones
+
+```{r kNN}
+suppressWarnings(suppressMessages(library(VIM)))
+data.train$Age <- kNN(data.train)$Age
+# data.train$Cabin<- kNN(data.train)$Cabin ¿Dejamos estos como NA?
+data.train$Embarked <- kNN(data.train)$Embarked
+summary(data.train)
+```
+Una vez resuelta la problemática de los valores vacios vemos cómo se distribuyen los valores de la edad y discretizamos esta variable para facilitar su análisis
+
+```{r edad}
+summary(data.train$Age)
+# Discretizamos
+data.train$AgeSegments <- cut(data.train$Age, breaks = c(0,10,20,30,40,50,60,70,110), labels = c("0-9", "10-19", "20-29",    "30-39","40-49","50-59","60-69","70+"))
+```
+
+
+## 3.2. Identificación y tratamiento de valores extremos.
+
+Representamos un diagrama de caja por cada variable para ver qué valores distan mucho del rango intercuartílico (la caja) en las variables numéricas
+
+```{r boxplots}
+par(mar = c(2, 2, 2, 2))
+layout(matrix(c(1,2,3,4), 2, 2, byrow = TRUE),widths=c(1,1,1), heights=c(1,1,1))
+boxplot(data.train$Age,main="Age", col="gray")
+boxplot(data.train$SibSp,main="Hermanos / cónyuges a bordo", col="gray")
+boxplot(data.train$Parch,main="Padres / niños a bordo", col="gray")
+boxplot(data.train$Fare,main="Tarifa", col="gray")
+```
+En ninguno de los casos los valores extremos que quedan fuera de los rangos parecen valores que no sean razonables. Quizás el que pueda levantar más sospechas es el valor altísimo que detectamos en la tarifa
+
+Utilizamos la función boxplots.stats() de R para identificar los Valores extremos de Age y sus posiciones. Al ser pocos visualizamos el resto de variables de las personas en estos valores extremos
+```{r extremos edad}
+values <- boxplot.stats(data.train$Age)$out
+idx <- which( data.train$Age %in% values)
+Age.outliers <- data.train[idx,]
+Age.outliers %>% kable(caption="Outliers en Age") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+Tras ver el resto de datos de estos pasajeros sigue pareciendo del todo razonable la edad registrada, por lo que decidimos no actuar sobre estos valores extremos
+
+```{r extremos edad 2}
+values <- boxplot.stats(data.train$Age)$out
+idx <- which( data.train$Age %in% values)
+Age.outliers <- data.train[idx,]
+Age.outliers %>% kable(caption="Outliers en Age") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+Analizamos ahora los extremos en el número de hermanos
+```{r extremos hermanos}
+unique(boxplot.stats(data.train$SibSp)$out)
+```
+Los casos de 3 y 4 hermanos, aún siendo extremos los damos directamente por buenos, pues era muy frecuente ese número de hermanos en la época. Nos centramos en los casos de 5 y 8 hermanos para ver si son razonables
+
+```{r extremos hermanos_5}
+data.train[data.train$SibSp==5,c(3,4,6,9)]
+```
+En el caso de 5 hermanos vemos que coinciden ticket y apellidos, por lo que los damos por buenos. En este caso el error es que al ser 5 hermanos en total el número de hermanos que tiene cada uno a bordo ha de ser de 4
+
+```{r extremos_hermanos_cambio_5}
+data.train[data.train$SibSp==5,7] <- 4
+```
+
+Analizamos el caso de 8 hermanos
+```{r extremos_hermanos_8}
+data.train[data.train$SibSp==8,c(3,4,6,7,9)]
+```
+
+En este último caso vemos que se registran 8 personas a bordo, pero sólo hay 7, por lo que procedemos a cambiar el número de hermanos a 6
+```{r extremos hermanos cambio}
+data.train[data.train$SibSp==8,7] <- 6
+```
+
+Analizamos ahora los extremos en el número de familiares
+```{r extremos familiares}
+unique(boxplot.stats(data.train$Parch)$out)
+```
+Se registran como valores extremos todo lo que sea diferente a 0, que en principio es más que razonable. Como en el caso de los hermanos sólo inspeccionaremos los dos valores más extremos, en este caso 5 y 6.
+
+```{r extremos parch 5}
+data.train[data.train$Parch==5,c(3,4,6,7,8,9)]
+```
+Si miramos los datos de los tickets de estas personas podemos detectar si hay alguna anomalía
+```{r extremos parch 5 tickets}
+data.train[data.train$Ticket=="347082",c(3,4,6,7,8,9)]
+data.train[data.train$Ticket=="347077",c(3,4,6,7,8,9)]
+data.train[data.train$Ticket=="382652",c(3,4,6,7,8,9)]
+data.train[data.train$Ticket=="3101295",c(3,4,6,7,8,9)]
+```
+
+Parece todo correcto excepto el ticket 382652, donde el número de hermanos debería ser 3, pues es muy poco probable que uno de los hermanos viaje con un 
+
+Modificamos el número de hermanos en este caso también
+
+```{r extremos nhermanos}
+data.train[17,7] <- 3
+data.train[172,7] <- 3
+data.train[279,7] <- 3
+data.train[788,7] <- 3
+```
+
+Miramos el caso de 6 hijos
+```{r extremos parch 6}
+data.train[data.train$Parch==6,c(3,4,6,7,8,9)]
+```
+```{r extremos parch 6 tickets}
+data.train[data.train$Ticket=="CA 2144",c(3,4,6,7,8,9)]
+```
+En este caso parece todo correcto, pues faltarían un marido y un hijo que habrían ido con otro ticket.
+
+Para analizar los precios de los tickets lo haremos por clases en lugar de con toda la muestra, pues nos ayudará a identificar mejor las anomalías en esta variable
+```{r extremos primera clase}
+data.train.firstclass<-data.train[data.train$Pclass=="Primera clase",]
+unique(boxplot.stats(data.train.firstclass$Fare)$out)
+```
+Todos los valores detectados están en órdenes de magnitud parecidos, excepto el que supera 500. Miramos este caso, pues los demás son totalmente aceptables
+```{r extremos precio}
+data.train[data.train$Fare>500,c(3,4,6,7,8,9,10)]
+```
+Tenemos aquí un valor que podría parecer sospechoso, pues pagan por 3 personas más del doble que cualquiera de los otros pasajeros con tickets similares. No obstante, contrastando los nombres de los pasajeros con los datos en Internet está registrado que pagaron 512 $ por sus billetes.
+
+```{r extremos segunda clase}
+data.train.secondclass<-data.train[data.train$Pclass=="Segunda clase",]
+unique(boxplot.stats(data.train.secondclass$Fare)$out)
+```
+Para la segunda clase parecen del todo razonables los valores detectados como extremos 
+
+Analizamos ahora la tercera clase
+
+```{r extremos tercera clase}
+data.train.thirdclass<-data.train[data.train$Pclass=="Tercera clase",]
+unique(boxplot.stats(data.train.thirdclass$Fare)$out)
+```
+Aquí llama la atención los valores que superan los 50 dólares, pues serían muy altos incluso para la segunda clase. Miramos si hay muchas personas en el ticket y si no fuera así, deberíamos aplicar alguna corrección o marcarlos como "sospechosos"
+
+```{r extremos tercera clase >50}
+data.train.thirdclass[data.train.thirdclass$Fare>50,c(3,4,6,7,8,9,10)]
+```
+
+Observamos que estos precios corresponden con dos tickets de 7 personas cada una, por lo que consideramos que los valores son razonables.
+
+
+# 4. Análisis de los datos
+
+Añadimos dos nuevas variables para facilitar el análisis de la supervivencia, que es la variable en la que centraremos nuestro análisis
+
+```{r variables}
+# Añadimos variable FamilyMembers
+data.train$FamilyMembers <- as.integer(data.train$SibSp + data.train$Parch + 1)
+# Añadimos variable FarePerPassenger
+data.train$FarePerPassenger <- data.train$Fare / data.train$FamilyMembers
+```
+
+Analizamos la supervivencia según las otras variables como exploración previa de los datos para seleccionar los grupos a analizar
+
+```{r supervivencia}
+
+# Survived como función de Sex
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Sex,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por sexo")
+
+#Survived como función de Embarked:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por puerto de embarque")
+
+#Survived como función de AgeSegments:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=AgeSegments,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Edad")
+
+#Survived como función de Pclass:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Clase")
+
+#Survived como función de FamilyMembers:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FamilyMembers,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Family Members")
+
+#Survived como función de FarePerPassenger:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassenger,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
+```
+
+## 4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar)
+
+## 4.2. Comprobación de la normalidad y homogeneidad de la varianza.
+
+## 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos. 
+
+En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis,
+correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.
+
+# 5. Representación de los resultados a partir de tablas y gráficas.
+
+# 6. Resolución del problema. 
+
+A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+
+#Exportación de los datos preprocesados
+write.csv(data.train, "./titanic/train_clean.csv")
+```
+
