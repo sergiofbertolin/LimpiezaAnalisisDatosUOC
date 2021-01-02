@@ -2,10 +2,11 @@
 title: "Tipología y ciclo de Vida de los datos. PRA2"
 authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
 date: "31/12/2020"
+always_allow_html: true
 output:
-  html_document:
+  word_document:
     toc: yes
-  pdf_document:
+  html_document:
     toc: yes
 ---
 
@@ -19,6 +20,8 @@ library(ggplot2)
 library(dplyr)
 library(kableExtra)
 library(VIM)
+library(arules)
+library(car)
 ```
 
 # 1. Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?
@@ -295,6 +298,9 @@ Añadimos dos nuevas variables para facilitar el análisis de la supervivencia, 
 data.train$FamilyMembers <- as.integer(data.train$SibSp + data.train$Parch + 1)
 # Añadimos variable FarePerPassenger
 data.train$FarePerPassenger <- data.train$Fare / data.train$FamilyMembers
+
+# Discretizamos FarePerPassenger
+data.train$FarePerPassengerSegments <- discretize(data.train$FarePerPassenger, method = "interval", breaks = 8)
 ```
 
 Analizamos la supervivencia según las otras variables como exploración previa de los datos para seleccionar los grupos a analizar
@@ -316,18 +322,129 @@ ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Pclass,fill=Survived))+geo
 #Survived como función de FamilyMembers:
 ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FamilyMembers,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Family Members")
 
-#Survived como función de FarePerPassenger:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassenger,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
+#Survived como función de FarePerPassengerSegments:
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassengerSegments,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
 ```
 
 ## 4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar)
 
+Tras mirar las distribuciones previas nos puede interesar comparar entre clases, entres sexos y entre puertos de embarque, por lo que creamos los distintos grupos que podemos utilizar
+
+```{r subconjuntos}
+# División en clases
+primera_clase <- data.train[data.train$Pclass=="Primera clase",]
+segunda_clase <- data.train[data.train$Pclass=="Segunda clase",]
+tercera_clase <- data.train[data.train$Pclass=="Tercera clase",]
+
+# División por supervivencia
+sobrevive <- data.train[data.train$Survived=="Sí",]
+no_sobrevive <- data.train[data.train$Survived=="No",]
+
+# División por sexos
+hombre <- data.train[data.train$Sex=="male",]
+mujer <- data.train[data.train$Sex=="female",]
+
+# División por puerto de embarque
+southampton <- data.train[data.train$Embarked=="Southampton",]
+cherbourg <- data.train[data.train$Embarked=="Cherbourg",]
+queenstown <- data.train[data.train$Embarked=="Queenstown",]
+
+```
+
+
 ## 4.2. Comprobación de la normalidad y homogeneidad de la varianza.
+
+El siguiente paso será comprobar que nuestras variables cuantitativas tienen una distribución normal y que sus varianzas son homogéneas. Todas nuestras variables excepto Fare y Age son etiquetas descriptivas, por lo que sólo deberemos hacer los tests de normalidad homocedasticidad a estas dos.
+
+Por el teorema del límite central podríamos asumir normalidad en todos los casos, pues siempre tenemos un número de muestras mayor que 30, pero vamos a asegurarnos. Aplcamis primero el test de Shapiro a ambas variables para comprobar si podemos rechazar la hipótesis nula de que la distribución no es normal con un intervalo de confianza del 95 %
+
+```{r normalidad}
+shapiro.test(data.train$Age)
+shapiro.test(data.train$Fare)
+```
+En ambos casos obtenemos un p-valor mucho menos que 0.05, por lo que se comprueba que las distribuciones se asemejan mucho a una normal. 
+Comprobamos ahora la homogeneidad de las varianzas con el test de Levene, que aplicaremos a las edades y precios en función de los grupos seleccionados como de interés. Empezamos con la edad.
+
+```{r homocedasticidad edades}
+leveneTest(data.train$Age~data.train$Pclass)
+leveneTest(data.train$Age~data.train$Sex)
+leveneTest(data.train$Age~data.train$Embarked)
+leveneTest(data.train$Age~data.train$Survived)
+```
+Observamos que la edad presenta varianzas distintas según la clase (el p-valor es menor que 0.05 y rechazamos la hipótesis nula). 
+En el caso del sexo, puerto de embarque y supervivencia tendríamos varianzas de edad muy similares para los distintos grupos de cada variable.
+
+```{r homocedasticidad precios}
+leveneTest(data.train$Fare~data.train$Pclass)
+leveneTest(data.train$Fare~data.train$Sex)
+leveneTest(data.train$Fare~data.train$Embarked)
+leveneTest(data.train$Fare~data.train$Survived)
+```
+Para el caso de los precios observamos que el p-valor es muy pequeño (mucho menor que 0.05) para todas las variables estudiadas, por lo que podemos asumir que las varianzas de precios serán distintas para todos los grupos posibles según la clase, edad, sexo y supervivencia.
 
 ## 4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos. 
 
 En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis,
 correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.
+
+Vamos a hacer un test de hipotésis sobre la proporción de supervivientes dependiendo de la clase en la que viajaba el pasajero.
+
+Hacemos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase.
+```{r est_2}
+p_sob_primera <- nrow(primera_clase[primera_clase$Survived=="Sí",])/nrow(primera_clase)
+p_sob_segunda <- nrow(segunda_clase[segunda_clase$Survived=="Sí",])/nrow(segunda_clase)
+p_sob_tercera <- nrow(tercera_clase[tercera_clase$Survived=="Sí",])/nrow(tercera_clase)
+sob <-  c(p_sob_primera*nrow(primera_clase),p_sob_segunda*nrow(segunda_clase),p_sob_tercera*nrow(tercera_clase))
+nn <- c(nrow(primera_clase),nrow(segunda_clase),nrow(tercera_clase))
+prop.test(sob,nn,alternative="two.sided",correct=FALSE)
+
+```
+El p-valor de 2.2e-16, mucho menor a 0.05, nos hace rechazar la hipótesis nula, por lo que podemos concluir que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+Primera clase: 62.96 % de supervivientes
+Segunda clase: 47.28 % de supervivientes
+Tercera clase: 24.23 % de supervivientes
+
+En el test de correlación vamos a mirar primero las correlaciones entre sobrevivir y alguna variables numéricas
+
+```{r corr}
+data.train$SurvivedInt <- as.integer(ifelse(data.train$Survived=="Sí",1,0))
+cor.test(data.train$Fare,data.train$SurvivedInt)
+
+cor.test(data.train$Age,data.train$SurvivedInt)
+
+cor.test(data.train$SibSp,data.train$SurvivedInt)
+```
+
+Observamos cómo la correlación entre la edad, el número de hermanos o cónyugues y la supervivencia es prácticamente inexistente. En estos casos los p-valores son altos y la correlación bastante baja.
+
+No obstante, para la dependencia de la supervivencia con el precio del billete sí que hay un p-valor muy pequeño que permite rechazar la hipótesis nula y la correlación es de 0.25. Esta correlación no es excesivamente grande, pero teniendo en cuenta que sobrevivir es una variable binaria que da 0 o 1, una correlación de 0.25 será muy a tener en cuenta.
+
+Para finalizar vamos a usar una regresión logística para predecir la probabilidad de supervivencia en función de las variables que hemos encontrad que puedan tener algún efecto en la misma. Nos decantamos por usar el sexo, el puerto de embarque, la clase y el precio.
+
+```{r glm_cuanti_cuali}
+glm_sobrevivir <- glm(Survived~Sex+Embarked+Pclass+Fare, family=binomial(link=logit),data=data.train)
+summary(glm_sobrevivir)
+```
+Concluimos de este modelo que las variables que más influyen en la no supervivencia son ser hombre y ser de tercera clase, pues tenemos unos p-valores muy pequeños para ambas variables en el modelo.
+
+Creado el modelo miramos la tabla de confusión de las predicciones hechas con el mismo y lo comparamos con las personas que han sobrevivido
+
+```{r glm_pred_venta_2}
+library(caret)
+library(e1071)
+predicted_data <- predict(glm_sobrevivir, data.train)
+predicted_survival <- as.factor(ifelse(predicted_data>0.5,"Sí","No"))
+cm <- confusionMatrix(predicted_survival,data.train$Survived)
+cm$table
+```
+La exactitud del modelo es del 81.33 %. 523 valores son muertos reales y 200 son supervivientes reales del total de 891 resultados totales. El 81.33 % de las predicciones son correctas.
+
+La precisión es elevada, del 88.49 %. El modelo predice bien las personas que sobreviven: 200 casos de supervivencia son correctos de los 226 que predecimos.
+
+La especificidad es muy buena, del 95.26%. Esto quiere decir que el modelo predice muy bien las personas que NO van a sobrevivir, prediciendo 523 personas que mueren de las 549 que en realidad murieron.  
+
+El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 personas que en realidad sobreviven, tan sólo se detectan correctamente 200, un 58.82 %.
 
 # 5. Representación de los resultados a partir de tablas y gráficas.
 
@@ -336,6 +453,8 @@ correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis dif
 A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
 
 #Exportación de los datos preprocesados
+
+```{r export}
 write.csv(data.train, "./titanic/train_clean.csv")
 ```
 
