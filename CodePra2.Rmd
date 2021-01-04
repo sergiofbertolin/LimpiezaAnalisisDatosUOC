@@ -1,13 +1,15 @@
 ---
 title: "Tipología y ciclo de Vida de los datos. PRA2"
 authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
-date: "31/12/2020"
-always_allow_html: true
+date: "04/01/2020"
 output:
-  word_document:
-    toc: yes
   html_document:
     toc: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -26,13 +28,13 @@ library(car)
 
 # 1. Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?
 
-El dataset corresponde a una completa colección de datos de los pasajeros que embarcaron en el Titanic. Es parte de una competición activa de Kaggle y el objeto de esta competición es la realización de análisis predictivo sobre qué pasajeros sobrevivieron al naufragio del Titanic. 
+El dataset corresponde a la colección de datos de entrenamiento parte de una competición activa de Kaggle y el objeto de esta competición es la realización de análisis predictivo sobre qué pasajeros sobrevivieron al naufragio del Titanic. 
 
 # 2. Integración y selección de los datos de interés a analizar.
 
 ## Carga de datos y análisis inicial
 
-Para empezar cargamos los datos. No hará falta integrarlos porque tenemos un único origen de datos, por lo qu enos centraremos en el análisis y limpieza de estos. 
+Para empezar cargamos los datos. No hará falta integrarlos porque tenemos un único origen de datos, por lo que nos centraremos en el análisis y limpieza de estos. 
 
 ```{r carga, message= FALSE, warning=FALSE}
 data.train<-read.csv("./titanic/train.csv",header=T,sep=",")
@@ -43,7 +45,6 @@ Hacemos una primera revisión de los datos, mirando la dimensión del data frame
 # Breve análisis de los datos 
 # Dimensiones de la base de datos mediante la función dim(). Obtenemos que disponemos de 891 registros o pasajeros (filas) y 12 variables (columnas). 
 dim(data.train)
-
 # Examinamos el tipo de datos con los que R ha interpretado cada variable.
 sapply(data.train,class)
 ```
@@ -95,27 +96,21 @@ Reformateamos las siguientes variables para trabajar mejor con ellas
 |Embarked|string        |factor         |
 
 ```{r formato_cambio, message= FALSE, warning=FALSE}
-
 #Survived de entero a factor
 data.train$Survived <- factor(data.train$Survived, levels=c(0,1), labels=c("No", "Sí"))
 levels(data.train$Survived)
-
 #Pclass de entero a factor
 data.train$Pclass <- factor(data.train$Pclass, levels=c(1,2,3), labels=c("Primera clase", "Segunda clase", "Tercera clase"))
 levels(data.train$Pclass )
-
 #R ha interpretado la variable Sex como un string, la cambiamos a factor
 data.train$Sex<- factor(data.train$Sex)
 levels(data.train$Sex)
-
 #R ha interpretado la variable Ticket como un string, la cambiamos a factor
 data.train$Ticket<- factor(data.train$Ticket)
 head(levels(data.train$Ticket))
-
 # R ha interpretado la variable Cabin como un string, la cambiamos a factor
 data.train$Cabin<- factor(data.train$Cabin)
 head(levels(data.train$Cabin))
-
 # R ha interpretado la variable Embarked como un string, la cambiamos a factor
 data.train$Embarked<- factor(data.train$Embarked, levels=c("C", "Q", "S"),labels=c("Cherbourg", "Queenstown", "Southampton"))
 levels(data.train$Embarked)
@@ -147,13 +142,12 @@ data.train$Cabin[data.train$Embarked==""]<- NA
 
 Imputaremos los valores que faltan basándonos en la similitud o diferencia entre los registros: la imputación basada en k vecinos más próximos
 
-Imputamos los valores para Age y Embraked, en la variable Cabin hay demasiada poca información como para haer imputaciones
+Imputamos los valores para Age y Embarked, en la variable Cabin hay demasiada poca información como para haCer imputaciones
 
 ```{r kNN}
 suppressWarnings(suppressMessages(library(VIM)))
-data.train$Age <- kNN(data.train)$Age
-# data.train$Cabin<- kNN(data.train)$Cabin ¿Dejamos estos como NA?
-data.train$Embarked <- kNN(data.train)$Embarked
+data.train$Age <- kNN(data.train[, 2:12] )$Age
+data.train$Embarked <- kNN(data.train[, 2:12])$Embarked
 summary(data.train)
 ```
 Una vez resuelta la problemática de los valores vacios vemos cómo se distribuyen los valores de la edad y discretizamos esta variable para facilitar su análisis
@@ -204,21 +198,15 @@ Los casos de 3 y 4 hermanos, aún siendo extremos los damos directamente por bue
 ```{r extremos hermanos_5}
 data.train[data.train$SibSp==5,c(3,4,6,9)]
 ```
-En el caso de 5 hermanos vemos que coinciden ticket y apellidos, por lo que los damos por buenos. En este caso el error es que al ser 5 hermanos en total el número de hermanos que tiene cada uno a bordo ha de ser de 4
-
-```{r extremos_hermanos_cambio_5}
-data.train[data.train$SibSp==5,7] <- 4
-```
+En el caso de 5 hermanos vemos que coinciden ticket y apellidos, por lo que los damos por buenos.
 
 Analizamos el caso de 8 hermanos
 ```{r extremos_hermanos_8}
 data.train[data.train$SibSp==8,c(3,4,6,7,9)]
 ```
 
-En este último caso vemos que se registran 8 personas a bordo, pero sólo hay 7, por lo que procedemos a cambiar el número de hermanos a 6
-```{r extremos hermanos cambio}
-data.train[data.train$SibSp==8,7] <- 6
-```
+En este último caso vemos que se registran 8 personas a bordo, sólo hay 7 pero estamos tratando el data.train de esta competición de kraggle, el otro hermano está en el data.test, por lo que lo damos por bueno
+
 
 Analizamos ahora los extremos en el número de familiares
 ```{r extremos familiares}
@@ -237,16 +225,7 @@ data.train[data.train$Ticket=="382652",c(3,4,6,7,8,9)]
 data.train[data.train$Ticket=="3101295",c(3,4,6,7,8,9)]
 ```
 
-Parece todo correcto excepto el ticket 382652, donde el número de hermanos debería ser 3, pues es muy poco probable que uno de los hermanos viaje con un 
-
-Modificamos el número de hermanos en este caso también
-
-```{r extremos nhermanos}
-data.train[17,7] <- 3
-data.train[172,7] <- 3
-data.train[279,7] <- 3
-data.train[788,7] <- 3
-```
+Parece todo correcto 
 
 Miramos el caso de 6 hijos
 ```{r extremos parch 6}
@@ -255,7 +234,7 @@ data.train[data.train$Parch==6,c(3,4,6,7,8,9)]
 ```{r extremos parch 6 tickets}
 data.train[data.train$Ticket=="CA 2144",c(3,4,6,7,8,9)]
 ```
-En este caso parece todo correcto, pues faltarían un marido y un hijo que habrían ido con otro ticket.
+En este caso parece todo correcto, pues faltarían un marido y un hijo que estarán en el data.test.
 
 Para analizar los precios de los tickets lo haremos por clases en lugar de con toda la muestra, pues nos ayudará a identificar mejor las anomalías en esta variable
 ```{r extremos primera clase}
@@ -298,32 +277,34 @@ Añadimos dos nuevas variables para facilitar el análisis de la supervivencia, 
 data.train$FamilyMembers <- as.integer(data.train$SibSp + data.train$Parch + 1)
 # Añadimos variable FarePerPassenger
 data.train$FarePerPassenger <- data.train$Fare / data.train$FamilyMembers
-
 # Discretizamos FarePerPassenger
 data.train$FarePerPassengerSegments <- discretize(data.train$FarePerPassenger, method = "interval", breaks = 8)
 ```
 
+
+Exportación de los datos preprocesados
+
+```{r export}
+write.csv(data.train, "./titanic/train_clean.csv")
+```
+
+
+
 Analizamos la supervivencia según las otras variables como exploración previa de los datos para seleccionar los grupos a analizar
 
 ```{r supervivencia}
-
 # Survived como función de Sex
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Sex,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por sexo")
-
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Sex,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por sexo")
 #Survived como función de Embarked:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por puerto de embarque")
-
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por puerto de embarque")
 #Survived como función de AgeSegments:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=AgeSegments,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Edad")
-
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=AgeSegments,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por Edad")
 #Survived como función de Pclass:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Clase")
-
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por Clase")
 #Survived como función de FamilyMembers:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FamilyMembers,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por Family Members")
-
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FamilyMembers,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por Family Members")
 #Survived como función de FarePerPassengerSegments:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassengerSegments,fill=Survived))+geom_bar(position="fill")+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassengerSegments,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
 ```
 
 ## 4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar)
@@ -335,20 +316,16 @@ Tras mirar las distribuciones previas nos puede interesar comparar entre clases,
 primera_clase <- data.train[data.train$Pclass=="Primera clase",]
 segunda_clase <- data.train[data.train$Pclass=="Segunda clase",]
 tercera_clase <- data.train[data.train$Pclass=="Tercera clase",]
-
 # División por supervivencia
 sobrevive <- data.train[data.train$Survived=="Sí",]
 no_sobrevive <- data.train[data.train$Survived=="No",]
-
 # División por sexos
 hombre <- data.train[data.train$Sex=="male",]
 mujer <- data.train[data.train$Sex=="female",]
-
 # División por puerto de embarque
 southampton <- data.train[data.train$Embarked=="Southampton",]
 cherbourg <- data.train[data.train$Embarked=="Cherbourg",]
 queenstown <- data.train[data.train$Embarked=="Queenstown",]
-
 ```
 
 
@@ -397,33 +374,34 @@ p_sob_tercera <- nrow(tercera_clase[tercera_clase$Survived=="Sí",])/nrow(tercer
 sob <-  c(p_sob_primera*nrow(primera_clase),p_sob_segunda*nrow(segunda_clase),p_sob_tercera*nrow(tercera_clase))
 nn <- c(nrow(primera_clase),nrow(segunda_clase),nrow(tercera_clase))
 prop.test(sob,nn,alternative="two.sided",correct=FALSE)
-
 ```
 El p-valor de 2.2e-16, mucho menor a 0.05, nos hace rechazar la hipótesis nula, por lo que podemos concluir que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
+
 Primera clase: 62.96 % de supervivientes
+
 Segunda clase: 47.28 % de supervivientes
+
 Tercera clase: 24.23 % de supervivientes
+
 
 En el test de correlación vamos a mirar primero las correlaciones entre sobrevivir y alguna variables numéricas
 
 ```{r corr}
 data.train$SurvivedInt <- as.integer(ifelse(data.train$Survived=="Sí",1,0))
-cor.test(data.train$Fare,data.train$SurvivedInt)
-
+cor.test(data.train$FarePerPassenger,data.train$SurvivedInt)
 cor.test(data.train$Age,data.train$SurvivedInt)
-
 cor.test(data.train$SibSp,data.train$SurvivedInt)
 ```
 
 Observamos cómo la correlación entre la edad, el número de hermanos o cónyugues y la supervivencia es prácticamente inexistente. En estos casos los p-valores son altos y la correlación bastante baja.
 
-No obstante, para la dependencia de la supervivencia con el precio del billete sí que hay un p-valor muy pequeño que permite rechazar la hipótesis nula y la correlación es de 0.25. Esta correlación no es excesivamente grande, pero teniendo en cuenta que sobrevivir es una variable binaria que da 0 o 1, una correlación de 0.25 será muy a tener en cuenta.
+No obstante, para la dependencia de la supervivencia con el precio del billete por pasajero sí que hay un p-valor muy pequeño que permite rechazar la hipótesis nula y la correlación es de 0.22. Esta correlación no es excesivamente grande, pero teniendo en cuenta que sobrevivir es una variable binaria que da 0 o 1, una correlación de 0.22 será muy a tener en cuenta.
 
-Para finalizar vamos a usar una regresión logística para predecir la probabilidad de supervivencia en función de las variables que hemos encontrad que puedan tener algún efecto en la misma. Nos decantamos por usar el sexo, el puerto de embarque, la clase y el precio.
+Para finalizar vamos a usar una regresión logística para predecir la probabilidad de supervivencia en función de las variables que hemos encontrado que puedan tener algún efecto en la misma. Nos decantamos por usar el sexo, el puerto de embarque, la clase y el precio.
 
 ```{r glm_cuanti_cuali}
-glm_sobrevivir <- glm(Survived~Sex+Embarked+Pclass+Fare, family=binomial(link=logit),data=data.train)
+glm_sobrevivir <- glm(formula =Survived~Sex+Embarked+Pclass+FarePerPassenger, family=binomial(link=logit),data=data.train)
 summary(glm_sobrevivir)
 ```
 Concluimos de este modelo que las variables que más influyen en la no supervivencia son ser hombre y ser de tercera clase, pues tenemos unos p-valores muy pequeños para ambas variables en el modelo.
@@ -448,13 +426,88 @@ El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 
 
 # 5. Representación de los resultados a partir de tablas y gráficas.
 
-# 6. Resolución del problema. 
+Representación de la curva ROC
 
-A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+```{r}
+library(pROC)
 
-#Exportación de los datos preprocesados
+r=roc(data.train$Survived,predicted_data , data=data.train)
 
-```{r export}
+plot(r)
+
+auc(r)
+```
+El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilidad del modelo para discriminar entre aquellos pasajeros que sobrevivieron y los que no, es buena.
+
+
+Representamos gráficamente  la relación entre la supervivencia y cada uno de las siguientes variables  el sexo y la clase en la que viajaban, mediante diagramas de barras la cantidad de supervivientes y no supervivientes
+
+Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+
+```{r}
+
+ggplot(data.train,aes(Sex ,fill=Survived))+geom_bar() +labs(x="Sex", y="Passengers")+
+scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Sex")
+
+ggplot(data.train,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Passengers")+
+scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Class")
+
+ggplot(hombre,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Male passengers")+
+scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Males survived by Class")
+```
+
+Tablas de contingencia
+
+```{r}
+SurvivedSex <- table(data.train$Sex, data.train$Survived)
+SurvivedSex
+prop.table(SurvivedSex, margin = 1)
+
+SurvivedClass <- table(data.train$Pclass,data.train$Survived)
+SurvivedClass
+prop.table(SurvivedClass, margin = 1)
+
+SurvivedSexbyClass <- table(data.train$Sex,data.train$Survived,data.train$Pclass)
+SurvivedSexbyClass
+prop.table(SurvivedSexbyClass, margin = 1)
+```
+
+
+
+# 6. Resolución del problema. Conclusiones.
+
+
+### Para la resolución realizamos las siguientes acciones y estrajimos las correspondientes conclusiones
+
+
+#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+
+Primera clase: 62.96 % de supervivientes
+
+Segunda clase: 47.28 % de supervivientes
+
+Tercera clase: 24.23 % de supervivientes
+
+
+
+#### Realizamos test de correlación entre sobrevivir y las variables numéricas FarePerPassenger, Age y SibSp, y concluímos que:
+
+La correlación entre la edad, el número de hermanos o cónyugues y la supervivencia es prácticamente inexistente.
+
+La correlación del precio del billete por pasajero y la supervivencia no es excesivamente grande, pero teniendo en cuenta que sobrevivir es una variable binaria que da 0 o 1, una correlación de 0.22 será muy a tener en cuenta
+
+
+
+#### Realizamos una regresión logística para predecir la probabilidad de supervivencia en función de las variables que hemos encontrado que puedan tener algún efecto en la misma. Nos decantamos por usar el sexo, el puerto de embarque, la clase y el precio. Concluímos que:
+
+La exactitud del modelo es del 81.33 %. 523 valores son muertos reales y 200 son supervivientes reales del total de 891 resultados totales. El 81.33 % de las predicciones son correctas.
+
+La precisión es elevada, del 88.49 %. El modelo predice bien las personas que sobreviven: 200 casos de supervivencia son correctos de los 226 que predecimos.
+
+La especificidad es muy buena, del 95.26%. Esto quiere decir que el modelo predice muy bien las personas que NO van a sobrevivir, prediciendo 523 personas que mueren de las 549 que en realidad murieron.  
+
+El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 personas que en realidad sobreviven, tan sólo se detectan correctamente 200, un 58.82 %.
 write.csv(data.train, "./titanic/train_clean.csv")
 ```
 
