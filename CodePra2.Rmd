@@ -75,7 +75,7 @@ fare -> Passenger Fare
 cabin -> Cabin	 
 
 embarked -> Port of Embarkation	C = Cherbourg; Q = Queenstown; S = Southampton
- 
+
 ## Formato de variables
 
 Examinamos distribución de valores por variables para ver si hay alguna que esté en un formato inadecuado
@@ -171,6 +171,7 @@ boxplot(data.train$SibSp,main="Hermanos / cónyuges a bordo", col="gray")
 boxplot(data.train$Parch,main="Padres / niños a bordo", col="gray")
 boxplot(data.train$Fare,main="Tarifa", col="gray")
 ```
+
 En ninguno de los casos los valores extremos que quedan fuera de los rangos parecen valores que no sean razonables. Quizás el que pueda levantar más sospechas es el valor altísimo que detectamos en la tarifa
 
 Utilizamos la función boxplots.stats() de R para identificar los Valores extremos de Age y sus posiciones. Al ser pocos visualizamos el resto de variables de las personas en estos valores extremos
@@ -212,12 +213,12 @@ Analizamos ahora los extremos en el número de familiares
 ```{r extremos familiares}
 unique(boxplot.stats(data.train$Parch)$out)
 ```
-Se registran como valores extremos todo lo que sea diferente a 0, que en principio es más que razonable. Como en el caso de los hermanos sólo inspeccionaremos los dos valores más extremos, en este caso 5 y 6.
+Se registran como valores extremos todo lo que sea diferente a 0. Los pasajeros con 0 hermanos a bordo serán la norma, pero no parece descabellado que haya grupos de hermanos a bordo, por lo quedaremos directamente por buenos los valores diferentes a cero que no sean muy elevados. Como en el caso de los hermanos sólo inspeccionaremos los dos valores más extremos, en este caso 5 y 6.
 
 ```{r extremos parch 5}
 data.train[data.train$Parch==5,c(3,4,6,7,8,9)]
 ```
-Si miramos los datos de los tickets de estas personas podemos detectar si hay alguna anomalía
+Si miramos los datos de los tickets de las personas que tienen 5 familiares a bordo podemos detectar si hay alguna anomalía
 ```{r extremos parch 5 tickets}
 data.train[data.train$Ticket=="347082",c(3,4,6,7,8,9)]
 data.train[data.train$Ticket=="347077",c(3,4,6,7,8,9)]
@@ -227,7 +228,7 @@ data.train[data.train$Ticket=="3101295",c(3,4,6,7,8,9)]
 
 Parece todo correcto 
 
-Miramos el caso de 6 hijos
+Miramos el caso de 6 familiares
 ```{r extremos parch 6}
 data.train[data.train$Parch==6,c(3,4,6,7,8,9)]
 ```
@@ -304,7 +305,7 @@ ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Pclass,fill=Survived))+geo
 #Survived como función de FamilyMembers:
 ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FamilyMembers,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por Family Members")
 #Survived como función de FarePerPassengerSegments:
-ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassengerSegments,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por dinero por pasajero")
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=FarePerPassengerSegments,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por dinero pagado por pasajero")
 ```
 
 ## 4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar)
@@ -430,11 +431,8 @@ Representación de la curva ROC
 
 ```{r}
 library(pROC)
-
 r=roc(data.train$Survived,predicted_data , data=data.train)
-
 plot(r)
-
 auc(r)
 ```
 El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilidad del modelo para discriminar entre aquellos pasajeros que sobrevivieron y los que no, es buena.
@@ -442,16 +440,13 @@ El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilida
 
 Representamos gráficamente  la relación entre la supervivencia y cada uno de las siguientes variables  el sexo y la clase en la que viajaban, mediante diagramas de barras la cantidad de supervivientes y no supervivientes
 
-Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+Podemos comprobar gráficamente la conclusión que extrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
 
 ```{r}
-
 ggplot(data.train,aes(Sex ,fill=Survived))+geom_bar() +labs(x="Sex", y="Passengers")+
 scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Sex")
-
 ggplot(data.train,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Passengers")+
 scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Class")
-
 ggplot(hombre,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Male passengers")+
 scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Males survived by Class")
 ```
@@ -462,11 +457,9 @@ Tablas de contingencia
 SurvivedSex <- table(data.train$Sex, data.train$Survived)
 SurvivedSex
 prop.table(SurvivedSex, margin = 1)
-
 SurvivedClass <- table(data.train$Pclass,data.train$Survived)
 SurvivedClass
 prop.table(SurvivedClass, margin = 1)
-
 SurvivedSexbyClass <- table(data.train$Sex,data.train$Survived,data.train$Pclass)
 SurvivedSexbyClass
 prop.table(SurvivedSexbyClass, margin = 1)
@@ -477,10 +470,10 @@ prop.table(SurvivedSexbyClass, margin = 1)
 # 6. Resolución del problema. Conclusiones.
 
 
-### Para la resolución realizamos las siguientes acciones y estrajimos las correspondientes conclusiones
+Para la resolución realizamos las siguientes acciones y extrajimos las correspondientes conclusiones
 
 
-#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluimos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
 
 Primera clase: 62.96 % de supervivientes
@@ -508,6 +501,3 @@ La precisión es elevada, del 88.49 %. El modelo predice bien las personas que s
 La especificidad es muy buena, del 95.26%. Esto quiere decir que el modelo predice muy bien las personas que NO van a sobrevivir, prediciendo 523 personas que mueren de las 549 que en realidad murieron.  
 
 El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 personas que en realidad sobreviven, tan sólo se detectan correctamente 200, un 58.82 %.
-write.csv(data.train, "./titanic/train_clean.csv")
-```
-
