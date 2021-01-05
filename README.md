@@ -37,10 +37,10 @@ Colección de datos de entrenamiento una vez realizado el proceso de limpieza de
 
 Tiene el siguiente formato:
 
-|FIELD1|PassengerId|Survived|Pclass       |Name                                               |Sex   |Age|SibSp|Parch|Ticket   |Fare   |Cabin|Embarked   |AgeSegments|FamilyMembers|FarePerPassenger|FarePerPassengerSegments|SurvivedInt|
-|------|-----------|--------|-------------|---------------------------------------------------|------|---|-----|-----|---------|-------|-----|-----------|-----------|-------------|----------------|------------------------|-----------|
-|1     |1          |No      |Tercera clase|Braund, Mr. Owen Harris                            |male  |22 |1    |0    |A/5 21171|7.25   |NA   |Southampton|20-29      |2            |3.625           |[0,64)                  |0          |
-|2     |2          |Sí      |Primera clase|Cumings, Mrs. John Bradley (Florence Briggs Thayer)|female|38 |1    |0    |PC 17599 |71.2833|C85  |Cherbourg  |30-39      |2            |35.64165        |[0,64)                  |1          |
+|PassengerId|Survived|Pclass       |Name                                               |Sex   |Age|SibSp|Parch|Ticket   |Fare   |Cabin|Embarked   |AgeSegments|FamilyMembers|FarePerPassenger|FarePerPassengerSegments|SurvivedInt|
+|-----------|--------|-------------|---------------------------------------------------|------|---|-----|-----|---------|-------|-----|-----------|-----------|-------------|----------------|------------------------|-----------|
+|1          |No      |Tercera clase|Braund, Mr. Owen Harris                            |male  |22 |1    |0    |A/5 21171|7.25   |NA   |Southampton|20-29      |2            |3.625           |[0,64)                  |0          |
+|2          |Sí      |Primera clase|Cumings, Mrs. John Bradley (Florence Briggs Thayer)|female|38 |1    |0    |PC 17599 |71.2833|C85  |Cherbourg  |30-39      |2            |35.64165        |[0,64)                  |1          |
 
 
 ### CodePra2.Rmd
