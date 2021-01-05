@@ -4,11 +4,11 @@ title: "Tipología y ciclo de Vida de los datos. PRA2"
 authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
 date: "05/01/2020"
 output:
-  word_document:
+  html_document:
     toc: yes
   pdf_document:
     toc: yes
-  html_document:
+  word_document:
     toc: yes
 always_allow_html: yes
 ---
@@ -287,7 +287,7 @@ data.train$FarePerPassengerSegments <- discretize(data.train$FarePerPassenger, m
 Exportación de los datos preprocesados
 
 ```{r export}
-write.csv(data.train, "./titanic/train_clean.csv")
+write.csv(data.train, file="./titanic/train_clean.csv", row.names= FALSE)
 ```
 
 
@@ -471,7 +471,7 @@ El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 
 
 # 5. Representación de los resultados a partir de tablas y gráficas.
 
-Podemos comprobar gráficamente la conclusión que extrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
 
 Grafico: proporción de supervivientes por clase
 

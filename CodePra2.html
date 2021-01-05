@@ -1859,7 +1859,7 @@ data.train$FarePerPassenger &lt;- data.train$Fare / data.train$FamilyMembers
 # Discretizamos FarePerPassenger
 data.train$FarePerPassengerSegments &lt;- discretize(data.train$FarePerPassenger, method = &quot;interval&quot;, breaks = 8)</code></pre>
 <p>Exportación de los datos preprocesados</p>
-<pre class="r"><code>write.csv(data.train, &quot;./titanic/train_clean.csv&quot;)</code></pre>
+<pre class="r"><code>write.csv(data.train, file=&quot;./titanic/train_clean.csv&quot;, row.names= FALSE)</code></pre>
 <p>Analizamos la supervivencia según las otras variables como exploración previa de los datos para seleccionar los grupos a analizar</p>
 <pre class="r"><code># Survived como función de Sex
 ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Sex,fill=Survived))+geom_bar(position=&quot;fill&quot;)+scale_fill_manual(values=c(&quot;#FF0000&quot;,&quot;#008000&quot;))+ylab(&quot;Frecuencia&quot;)+labs(title=&quot;Supervivencia por sexo&quot;)</code></pre>
