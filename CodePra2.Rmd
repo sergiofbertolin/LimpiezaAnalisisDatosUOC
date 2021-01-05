@@ -1,7 +1,8 @@
+  
 ---
 title: "Tipología y ciclo de Vida de los datos. PRA2"
 authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
-date: "04/01/2020"
+date: "05/01/2020"
 output:
   html_document:
     toc: yes
@@ -385,14 +386,60 @@ Segunda clase: 47.28 % de supervivientes
 
 Tercera clase: 24.23 % de supervivientes
 
+Vamos a hacer un test de hipotésis sobre la proporción de supervivientes dependiendo del sexo del pasajero.
+
+Hacemos un test sobre la proporción de supervivientes con 2 muestras, una para cada sexo.
+
+```{r est_22}
+p_sob_mujeres <- nrow(mujer[mujer$Survived=="Sí",])/nrow(mujer)
+p_sob_hombres <- nrow(hombre[hombre$Survived=="Sí",])/nrow(hombre)
+sob <-  c(p_sob_mujeres*nrow(mujer),p_sob_hombres*nrow(hombre))
+nn <- c(nrow(mujer),nrow(hombre))
+prop.test(sob,nn,alternative="two.sided",correct=FALSE)
+```
+El p-valor de 2.2e-16, mucho menor a 0.05, nos hace rechazar la hipótesis nula, por lo que podemos concluir que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+
+Mujeres: 74.20 % de supervivientes
+
+Hombres: 18.89 % de supervivientes
+
+
+Vamos a hacer un test de hipotésis sobre la proporción de supervivientes dependiendo del puerto de embarque del pasajero.
+
+Hacemos un test sobre la proporción de supervivientes con 3 muestras, una para cada puerto de embarque.
+```{r est_222}
+p_sob_southampton <- nrow(southampton[southampton$Survived=="Sí",])/nrow(southampton)
+p_sob_cherbourg <- nrow(cherbourg[cherbourg$Survived=="Sí",])/nrow(cherbourg)
+p_sob_queenstown <- nrow(queenstown[queenstown$Survived=="Sí",])/nrow(queenstown)
+sob <-  c(p_sob_southampton*nrow(southampton),p_sob_cherbourg*nrow(cherbourg),p_sob_tercera*nrow(queenstown))
+nn <- c(nrow(southampton),nrow(cherbourg),nrow(queenstown))
+prop.test(sob,nn,alternative="two.sided",correct=FALSE)
+```
+El p-valor de  3.469e-08, mucho menor a 0.05, nos hace rechazar la hipótesis nula, por lo que podemos concluir que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+
+southampton: 33.69 % de supervivientes
+
+cherbourg: 55.88 % de supervivientes
+
+queenstown: 38.96 % de supervivientes
+
+
 
 En el test de correlación vamos a mirar primero las correlaciones entre sobrevivir y alguna variables numéricas
 
 ```{r corr}
 data.train$SurvivedInt <- as.integer(ifelse(data.train$Survived=="Sí",1,0))
-cor.test(data.train$FarePerPassenger,data.train$SurvivedInt)
-cor.test(data.train$Age,data.train$SurvivedInt)
-cor.test(data.train$SibSp,data.train$SurvivedInt)
+cor_FarePerPassenger <- cor.test(data.train$FarePerPassenger,data.train$SurvivedInt)
+cor_FarePerPassenger
+
+
+cor_Age <- cor.test(data.train$Age,data.train$SurvivedInt)
+cor_Age
+
+cor_SibSp <- cor.test(data.train$SibSp,data.train$SurvivedInt)
+cor_SibSp
 ```
 
 Observamos cómo la correlación entre la edad, el número de hermanos o cónyugues y la supervivencia es prácticamente inexistente. En estos casos los p-valores son altos y la correlación bastante baja.
@@ -427,53 +474,112 @@ El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 
 
 # 5. Representación de los resultados a partir de tablas y gráficas.
 
-Representación de la curva ROC
+Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+
+Grafico: proporción de supervivientes por clase
 
 ```{r}
-library(pROC)
-r=roc(data.train$Survived,predicted_data , data=data.train)
-plot(r)
-auc(r)
+#Survived como función de Pclass:
+ggplot(data = data.train,aes(x=Pclass,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por Clase")
 ```
-El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilidad del modelo para discriminar entre aquellos pasajeros que sobrevivieron y los que no, es buena.
+
+Primera clase: 62.96 % de supervivientes
+
+Segunda clase: 47.28 % de supervivientes
+
+Tercera clase: 24.23 % de supervivientes
 
 
-Representamos gráficamente  la relación entre la supervivencia y cada uno de las siguientes variables  el sexo y la clase en la que viajaban, mediante diagramas de barras la cantidad de supervivientes y no supervivientes
+Tabla de contingencia: supervivientes por clase
+```{r}
+SurvivedClass <- table(data.train$Pclass,data.train$Survived)
+SurvivedClass
+prop.table(SurvivedClass, margin = 1)
+```
 
-Podemos comprobar gráficamente la conclusión que extrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+
+Grafico: proporción de supervivientes por sexo
+
 
 ```{r}
-ggplot(data.train,aes(Sex ,fill=Survived))+geom_bar() +labs(x="Sex", y="Passengers")+
-scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Sex")
-ggplot(data.train,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Passengers")+
-scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Survived by Class")
-ggplot(hombre,aes(Pclass ,fill=Survived))+geom_bar() +labs(x="Class", y="Male passengers")+
-scale_fill_manual(values=c("#FF0000","#008000"))+ggtitle("Males survived by Class")
+# Survived como función de Sex
+ggplot(data = data.train[1:dim(data.train)[1],],aes(x=Sex,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por sexo")
 ```
 
-Tablas de contingencia
+Mujeres: 74.20 % de supervivientes
+
+Hombres: 18.89 % de supervivientes
+
+
+Tabla de contingencia: supervivientes por sexo
 
 ```{r}
 SurvivedSex <- table(data.train$Sex, data.train$Survived)
 SurvivedSex
 prop.table(SurvivedSex, margin = 1)
-SurvivedClass <- table(data.train$Pclass,data.train$Survived)
-SurvivedClass
-prop.table(SurvivedClass, margin = 1)
-SurvivedSexbyClass <- table(data.train$Sex,data.train$Survived,data.train$Pclass)
-SurvivedSexbyClass
-prop.table(SurvivedSexbyClass, margin = 1)
 ```
 
+
+Grafico: proporción de supervivientes por puerto de embarque
+
+
+```{r}
+
+
+#Survived como función de Embarked:
+ggplot(data = data.train,aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por puerto de embarque")
+```
+
+
+
+Cherbourg: 55.88 % de supervivientes
+
+Queenstown: 38.96 % de supervivientes
+
+Southampton: 33.69 % de supervivientes
+
+
+
+Tabla de contingencia: supervivientes por puerto de embarque
+```{r}
+SurvivedClass <- table(data.train$Embarked,data.train$Survived)
+SurvivedClass
+prop.table(SurvivedClass, margin = 1)
+```
+
+
+Correlaciones  entre sobrevivir y FarePerPassenger, Age y SibSp
+```{r}
+# Tabla con las correlaciones  entre sobrevivir y FarePerPassenger, Age y SibSp
+tabla.correlaciones <- matrix(c(cor_FarePerPassenger$estimate,cor_Age$estimate,cor_SibSp$estimate),ncol = 3, byrow = TRUE)
+colnames(tabla.correlaciones) <- c("Correlación FarePerPassenger", "Correlación Age", "Correlación SibSp")
+tabla.correlaciones
+```
+
+
+Regresión logística
+
+Representación de la curva ROC
+
+```{r}
+library(pROC)
+
+r=roc(data.train$Survived,predicted_data , data=data.train)
+
+plot(r)
+
+auc(r)
+```
+El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilidad del modelo para discriminar entre aquellos pasajeros que sobrevivieron y los que no, es buena.
 
 
 # 6. Resolución del problema. Conclusiones.
 
 
-Para la resolución realizamos las siguientes acciones y extrajimos las correspondientes conclusiones
+### Para la resolución realizamos las siguientes acciones y extrajimos las correspondientes conclusiones
 
 
-#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluimos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
 
 Primera clase: 62.96 % de supervivientes
@@ -482,6 +588,25 @@ Segunda clase: 47.28 % de supervivientes
 
 Tercera clase: 24.23 % de supervivientes
 
+
+
+#### Realizamos un test sobre la proporción de supervivientes con con 2 muestras, una para cada sexo, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+
+Mujeres: 74.20 % de supervivientes
+
+Hombres: 18.89 % de supervivientes
+
+
+#### Realizamos un test sobre la proporción de supervivientes con con 3 muestras, una para cada puerto de embarque, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+
+
+
+Cherbourg: 55.88 % de supervivientes
+
+Queenstown: 38.96 % de supervivientes
+
+Southampton: 33.69 % de supervivientes
 
 
 #### Realizamos test de correlación entre sobrevivir y las variables numéricas FarePerPassenger, Age y SibSp, y concluímos que:
@@ -501,3 +626,8 @@ La precisión es elevada, del 88.49 %. El modelo predice bien las personas que s
 La especificidad es muy buena, del 95.26%. Esto quiere decir que el modelo predice muy bien las personas que NO van a sobrevivir, prediciendo 523 personas que mueren de las 549 que en realidad murieron.  
 
 El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 personas que en realidad sobreviven, tan sólo se detectan correctamente 200, un 58.82 %.
+
+
+Representamos gráficamente  la relación entre la supervivencia y cada uno de las siguientes variables  el sexo y la clase en la que viajaban, mediante diagramas de barras la cantidad de supervivientes y no supervivientes
+
+Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
