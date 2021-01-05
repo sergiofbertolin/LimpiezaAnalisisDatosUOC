@@ -4,11 +4,11 @@ title: "Tipología y ciclo de Vida de los datos. PRA2"
 authors: Enrique Javier Andrés Orera & Sergio Fernández Bertolín
 date: "05/01/2020"
 output:
-  html_document:
+  word_document:
     toc: yes
   pdf_document:
     toc: yes
-  word_document:
+  html_document:
     toc: yes
 always_allow_html: yes
 ---
@@ -433,11 +433,8 @@ En el test de correlación vamos a mirar primero las correlaciones entre sobrevi
 data.train$SurvivedInt <- as.integer(ifelse(data.train$Survived=="Sí",1,0))
 cor_FarePerPassenger <- cor.test(data.train$FarePerPassenger,data.train$SurvivedInt)
 cor_FarePerPassenger
-
-
 cor_Age <- cor.test(data.train$Age,data.train$SurvivedInt)
 cor_Age
-
 cor_SibSp <- cor.test(data.train$SibSp,data.train$SurvivedInt)
 cor_SibSp
 ```
@@ -524,8 +521,6 @@ Grafico: proporción de supervivientes por puerto de embarque
 
 
 ```{r}
-
-
 #Survived como función de Embarked:
 ggplot(data = data.train,aes(x=Embarked,fill=Survived))+geom_bar(position="fill")+scale_fill_manual(values=c("#FF0000","#008000"))+ylab("Frecuencia")+labs(title="Supervivencia por puerto de embarque")
 ```
@@ -563,11 +558,8 @@ Representación de la curva ROC
 
 ```{r}
 library(pROC)
-
 r=roc(data.train$Survived,predicted_data , data=data.train)
-
 plot(r)
-
 auc(r)
 ```
 El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilidad del modelo para discriminar entre aquellos pasajeros que sobrevivieron y los que no, es buena.
@@ -576,10 +568,10 @@ El área por debajo de esa curva toma el valor de 0.8397, por lo que la habilida
 # 6. Resolución del problema. Conclusiones.
 
 
-### Para la resolución realizamos las siguientes acciones y extrajimos las correspondientes conclusiones
+#### Para la resolución realizamos las siguientes acciones y extrajimos las correspondientes conclusiones
 
 
-#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada clase, y concluimos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
 
 Primera clase: 62.96 % de supervivientes
@@ -590,7 +582,7 @@ Tercera clase: 24.23 % de supervivientes
 
 
 
-#### Realizamos un test sobre la proporción de supervivientes con con 2 muestras, una para cada sexo, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+#### Realizamos un test sobre la proporción de supervivientes con 2 muestras, una para cada sexo, y concluimos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
 
 Mujeres: 74.20 % de supervivientes
@@ -598,7 +590,7 @@ Mujeres: 74.20 % de supervivientes
 Hombres: 18.89 % de supervivientes
 
 
-#### Realizamos un test sobre la proporción de supervivientes con con 3 muestras, una para cada puerto de embarque, y concluímos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
+#### Realizamos un test sobre la proporción de supervivientes con 3 muestras, una para cada puerto de embarque, y concluimos que cada grupo tiene una proporción de supervivientes bastante diferenciada, centrada en los siguientes valores:
 
 
 
@@ -638,5 +630,3 @@ El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 
 | Investigación previa | EJAO, SFB |
 | Redacción de las respuestas | EJAO, SFB |
 | Desarrollo código | EJAO, SFB |
-
-
