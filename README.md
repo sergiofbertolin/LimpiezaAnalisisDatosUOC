@@ -1,23 +1,57 @@
 # LimpiezaAnalisisDatosUOC
 Repositorio con la limpieza y análisis de datos de la práctica 2 de la UOC de la asignatura Tipología y Ciclo de Vida de los Datos del Master de Ciencia de Datos de la UOC
 
-## Práctica 2: Limpieza y análisis de los datos
+## Miembros del equipo
 
-### 1. Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?
+Sergio Fernández Bertolín
 
-### 2. Integración y selección de los datos de interés a analizar.
+Enrique Javier Andrés Orera
 
-### 3. Limpieza de los datos.
-####  3.1. ¿Los datos contienen ceros o elementos vacíos? ¿Cómo gestionarías cada uno de estos casos?
-####  3.2. Identificación y tratamiento de valores extremos.
 
-### 4. Análisis de los datos.
-####  4.1. Selección de los grupos de datos que se quieren analizar/comparar (planificación de los análisis a aplicar).
-####  4.2. Comprobación de la normalidad y homogeneidad de la varianza.
-####  4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.
+## Descripción de los ficheros
 
-### 5. Representación de los resultados a partir de tablas y gráficas.
 
-### 6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+### README.md
 
-### 7. Código: Hay que adjuntar el código, preferiblemente en R, con el que se ha realizado la limpieza, análisis y representación de los datos. Si lo preferís, también podéis trabajar en Python.
+Fichero markdown con los contenidos del repositorio y una breve descripción de los archivos
+
+
+### train.csv
+
+Colección de datos de entrenamiento parte de una competición activa de Kaggle. El objeto de esta competición es la realización de análisis predictivo sobre qué pasajeros sobrevivieron al naufragio del Titanic
+https://www.kaggle.com/c/titanic
+
+
+Tiene el siguiente formato:
+
+| PassengerId | Survived | Pclass |         Name          | Sex | Age | SibSp | Parch | Ticket |  Fare | Cabin | Embarked |
+|------------:|---------:|-------:|----------------------:|----:|----:|------:|------:|-------:|------:|------:|---------:|
+| 1 | 0 | 3 | Braund, Mr. Owen Harris                             | male   | 22 | 1 | 0 | A/5 21171 | 7.25 | | S |
+| 2 | 1 | 1 | Cumings, Mrs. John Bradley (Florence Briggs Thayer) | female | 38 | 1 | 0 | PC 17599  |71.2833|C85| C |
+
+
+
+### train_clean.csv
+
+Colección de datos de entrenamiento una vez realizado el proceso de limpieza de los datos
+
+Tiene el siguiente formato:
+
+|FIELD1|PassengerId|Survived|Pclass       |Name                                               |Sex   |Age|SibSp|Parch|Ticket   |Fare   |Cabin|Embarked   |AgeSegments|FamilyMembers|FarePerPassenger|FarePerPassengerSegments|SurvivedInt|
+|------|-----------|--------|-------------|---------------------------------------------------|------|---|-----|-----|---------|-------|-----|-----------|-----------|-------------|----------------|------------------------|-----------|
+|1     |1          |No      |Tercera clase|Braund, Mr. Owen Harris                            |male  |22 |1    |0    |A/5 21171|7.25   |NA   |Southampton|20-29      |2            |3.625           |[0,64)                  |0          |
+|2     |2          |Sí      |Primera clase|Cumings, Mrs. John Bradley (Florence Briggs Thayer)|female|38 |1    |0    |PC 17599 |71.2833|C85  |Cherbourg  |30-39      |2            |35.64165        |[0,64)                  |1          |
+
+
+### CodePra2.Rmd
+
+Fichero RMarkdown. Solución de la práctica en Rmarkdown
+
+
+### InformePractica2.pdf
+
+Fichero pdf. Solución de la práctica. Informe en pdf,
+
+
+### CodePra2.html
+Fichero html. Solución de la práctica en html.
