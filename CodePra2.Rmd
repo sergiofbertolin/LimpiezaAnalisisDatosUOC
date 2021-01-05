@@ -628,6 +628,15 @@ La especificidad es muy buena, del 95.26%. Esto quiere decir que el modelo predi
 El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 personas que en realidad sobreviven, tan sólo se detectan correctamente 200, un 58.82 %.
 
 
-Representamos gráficamente  la relación entre la supervivencia y cada uno de las siguientes variables  el sexo y la clase en la que viajaban, mediante diagramas de barras la cantidad de supervivientes y no supervivientes
 
-Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+
+# Tabla de contribuciones
+
+
+| Contribuciones | Firma |
+| ---------- | ---------- |
+| Investigación previa | EJAO, SFB |
+| Redacción de las respuestas | EJAO, SFB |
+| Desarrollo código | EJAO, SFB |
+
+
