@@ -471,7 +471,7 @@ El peor de los parámetros de predicción es la sensibilidad, ya que de las 340 
 
 # 5. Representación de los resultados a partir de tablas y gráficas.
 
-Podemos comprobar gráficamente la conclusión que estrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
+Podemos comprobar gráficamente la conclusión que extrajimos, las variables que más influyen en la no supervivencia son ser hombre y viajar en tercera clase
 
 Grafico: proporción de supervivientes por clase
 
